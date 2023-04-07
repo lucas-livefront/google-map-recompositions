@@ -16,6 +16,11 @@ fun Float.toIntOffset(): IntOffset = IntOffset(
 )
 
 /**
+ * A function for rounding [Dp] to pixels using a [density].
+ */
+fun Dp.roundToPx(density: Density): Int = with(density) { toPx().roundToInt() }
+
+/**
  * A function for converting [Dp] to pixels.
  */
 @Composable
