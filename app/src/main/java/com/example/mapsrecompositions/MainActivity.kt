@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterialApi::class)
+@file:OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
 
 package com.example.mapsrecompositions
 
@@ -9,12 +9,17 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.BottomSheetScaffold
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.rememberSwipeableState
 import androidx.compose.material.swipeable
@@ -22,9 +27,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.invisibleToUser
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -44,11 +55,89 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MapsRecompositionsTheme {
-                MapExample()
+                AccessibilityTwoExample()
             }
         }
     }
 }
+@Composable
+private fun AccessibilityExample() {
+    val markerStateSydney = remember { MarkerState(position = LatLng(-34.0, 151.0)) }
+    val markerStateTokyo = remember { MarkerState(position = LatLng(35.66, 139.6)) }
+
+    BottomSheetScaffold(
+        sheetContent = {
+            Spacer(
+                modifier = Modifier
+                    .background(
+                        color = Color.Gray,
+                        shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
+                    )
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.5f)
+            )
+        },
+    ) {
+        GoogleMap(
+            modifier = Modifier
+                .clearAndSetSemantics { invisibleToUser() }
+                .focusable()
+                .fillMaxSize()
+        ) {
+            Marker(
+                state = markerStateSydney,
+                title = "Marker in Sydney",
+            )
+            Marker(
+                state = markerStateTokyo,
+                title = "Marker in Tokyo"
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccessibilityTwoExample() {
+    val markerStateSydney = remember { MarkerState(position = LatLng(-34.0, 151.0)) }
+    val markerStateTokyo = remember { MarkerState(position = LatLng(35.66, 139.6)) }
+
+    BottomSheetScaffold(
+        sheetContent = {
+            Spacer(
+                modifier = Modifier
+                    .background(
+                        color = Color.Gray,
+                        shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
+                    )
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.5f)
+                    .semantics {
+                        contentDescription = "I am a monster"
+                        traversalIndex = 0f
+                    }
+            )
+        },
+    ) {
+        GoogleMap(
+            modifier = Modifier
+                .fillMaxSize()
+                .semantics {
+                    contentDescription = "I am a sheet"
+                    traversalIndex = 1f
+                }
+        ) {
+            Marker(
+                state = markerStateSydney,
+                title = "Marker in Sydney",
+            )
+            Marker(
+                state = markerStateTokyo,
+                title = "Marker in Tokyo"
+            )
+        }
+    }
+}
+
 
 @Composable
 fun MapExample() {
