@@ -1,19 +1,19 @@
 package com.example.mapsrecompositions
 
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation.Vertical
+import androidx.compose.foundation.gestures.AnchoredDraggableState
+import androidx.compose.foundation.gestures.DraggableAnchors
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.FractionalThreshold
 import androidx.compose.material.Surface
-import androidx.compose.material.SwipeableState
-import androidx.compose.material.rememberSwipeableState
-import androidx.compose.material.swipeable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -24,34 +24,46 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.example.mapsrecompositions.Anchor.Collapsed
-import com.example.mapsrecompositions.Anchor.Expanded
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HalfBottomSheetScaffold(
     modifier: Modifier = Modifier,
-    swipeableState: SwipeableState<Anchor> = rememberSwipeableState(initialValue = Collapsed),
     content: @Composable (State<PaddingValues>) -> Unit,
 ) {
     val density = LocalDensity.current
     val paddingValuesState = remember { mutableStateOf(PaddingValues(0.dp)) }
+    val anchoredDraggableState = remember {
+        AnchoredDraggableState(
+            initialValue = Anchor.Collapsed,
+            positionalThreshold = { distance: Float -> distance * 0.5f },
+            velocityThreshold = { with(density) { 100.dp.toPx() } },
+            animationSpec = tween(),
+        )
+    }
 
-    BoxWithConstraints {
+    BoxWithConstraints(
+        modifier = modifier,
+    ) {
         val peakPx = 50.dp.toPx()
         val maxHeightPx = maxHeight.toPx()
 
-        val anchors = remember(maxHeightPx, peakPx) {
-            mapOf(
-                maxHeightPx - peakPx to Collapsed,
-                maxHeightPx / 2 to Expanded,
+        LaunchedEffect(
+            maxHeightPx,
+            peakPx,
+        ) {
+            anchoredDraggableState.updateAnchors(
+                DraggableAnchors {
+                    Anchor.Collapsed at (maxHeightPx - peakPx)
+                    Anchor.Expanded at maxHeightPx / 2
+                }
             )
         }
 
-        LaunchedEffect(swipeableState) {
-            snapshotFlow { swipeableState.offset.value }
+        LaunchedEffect(anchoredDraggableState) {
+            snapshotFlow { anchoredDraggableState.safeOffset }
                 .onEach {
                     paddingValuesState.value = PaddingValues(
                         bottom = maxHeight - it.toDp(density),
@@ -63,15 +75,12 @@ fun HalfBottomSheetScaffold(
         content(paddingValuesState)
 
         Surface(
-            modifier = modifier
-                .offset { swipeableState.offset.value.toIntOffset() }
-                .swipeable(
-                    state = swipeableState,
-                    anchors = anchors,
-                    orientation = Vertical,
-                    resistance = null,
-                    thresholds = { _, _ -> FractionalThreshold(fraction = 0.5f) },
-                ),
+            modifier = Modifier
+                .offset { anchoredDraggableState.safeOffset.toIntOffset() }
+                .anchoredDraggable(
+                    state = anchoredDraggableState,
+                    orientation = Orientation.Vertical,
+                )
         ) {
             Spacer(
                 modifier = Modifier
@@ -89,3 +98,10 @@ enum class Anchor {
     Collapsed,
     Expanded,
 }
+
+@OptIn(ExperimentalFoundationApi::class)
+val <T> AnchoredDraggableState<T>.safeOffset: Float
+    get() = this
+        .offset
+        .takeUnless { it.isNaN() }
+        ?: 0f
