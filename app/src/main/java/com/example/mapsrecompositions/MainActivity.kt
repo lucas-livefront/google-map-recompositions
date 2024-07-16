@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MapsRecompositionsTheme {
-                MapExample()
+                HalfSheetExample()
             }
         }
     }
@@ -191,6 +191,20 @@ fun CustomComponentExample() {
         CustomComposable(
             contentPaddingState = contentPaddingState,
             modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+@Composable
+fun HalfSheetExample() {
+    HalfBottomSheetScaffold(
+        modifier = Modifier.fillMaxSize(),
+    ) { contentPaddingState ->
+        Spacer(
+            modifier = Modifier
+                .padding { contentPaddingState.value }
+                .fillMaxSize()
+                .background(Color.Green.copy(alpha = 0.5f))
         )
     }
 }
