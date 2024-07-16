@@ -1,6 +1,7 @@
 package com.example.mapsrecompositions
 
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.AnchoredDraggableState
@@ -35,12 +36,14 @@ fun HalfBottomSheetScaffold(
 ) {
     val density = LocalDensity.current
     val paddingValuesState = remember { mutableStateOf(PaddingValues(0.dp)) }
+    val decayAnimationSpec = rememberSplineBasedDecay<Float>()
     val anchoredDraggableState = remember {
         AnchoredDraggableState(
             initialValue = Anchor.Collapsed,
             positionalThreshold = { distance: Float -> distance * 0.5f },
             velocityThreshold = { with(density) { 100.dp.toPx() } },
-            animationSpec = tween(),
+            snapAnimationSpec = tween(),
+            decayAnimationSpec = decayAnimationSpec,
         )
     }
 
